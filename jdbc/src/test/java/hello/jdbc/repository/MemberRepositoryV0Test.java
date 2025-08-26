@@ -4,6 +4,8 @@ import hello.jdbc.domain.Member;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import java.sql.SQLException;
+import java.util.NoSuchElementException;
+
 import static org.assertj.core.api.Assertions.*;
 
 @Slf4j
@@ -13,18 +15,28 @@ class MemberRepositoryV0Test {
     @Test
     void crud() throws SQLException {
         // new member insert
-        Member member = new Member("memberV4", 10000);
+        Member member = new Member("memberV100", 10000);
         repository.save(member);
-        
+
         // 방금 삽입한 멤버 아이디로 조회
         Member findMember = repository.findById(member.getMemeberId());
-        
-        // 요기서 객체 참조값이 아니라 toString 결과 보이는 건 lombok이 해준 거임
-        log.info("{} : {}", member.getMemeberId(), findMember);
-    
-        log.info("member == findMember {}", member==findMember); // false
-        log.info("member equals findMember {}", member.equals(findMember)); // true
-        // 여기서 정확히는 다른 인스턴스인데 equal이라고 뜨는 것도 lombok이 해준 거임 (내부적으로 equals 호출)
-        assertThat(findMember).isEqualTo(member); // true
+        log.info("findMember = {}", member.getMemeberId(), findMember);
+        assertThat(findMember).isEqualTo(member);
+
+        // update: money 10000->20000
+        repository.update(member.getMemeberId(),20000);
+        Member updateMember = repository.findById(member.getMemeberId());
+        assertThat(updateMember.getMoney()).isEqualTo(20000);
+
+        // delete
+        repository.delete(member.getMemeberId());
+
+        /* deleteMember = repository.findById(member.getMemeberId()); */
+        // 삭제 성공 체크하는 법!
+        // delete된 멤버 조회하려 하면
+        // findById에서 else문에 넣어준 NoSuchElementException 터지죠?
+        // 아래 assertThatThrownBy는 해당 예외가 발생해야 검증 통과!
+        assertThatThrownBy(() -> repository.findById(member.getMemeberId()))
+                .isInstanceOf(NoSuchElementException.class);
     }
 }
